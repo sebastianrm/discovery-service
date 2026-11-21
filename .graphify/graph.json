@@ -1,0 +1,264 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {
+    "community_labels": {
+      "0": "Community 0",
+      "1": "Community 1",
+      "2": "Community 2",
+      "3": "Community 3"
+    }
+  },
+  "topology_signature": "n=14;e=10;discovery_discoveryserviceapplication,discovery_discoveryserviceapplication_discoveryserviceapplication,discovery_discoveryserviceapplication_discoveryserviceapplication_main,discovery_discoveryserviceapplicationtests,discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests,discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests_contextloads,discovery_discoveryserviceintegrationtest,discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest,discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testdescubrimientoexitoso,discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testerrorregistro,discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testregistroexitoso,discoveryserviceapplication,discoveryserviceapplication_discoveryserviceapplication,discoveryserviceapplication_discoveryserviceapplication_main|discovery_discoveryserviceapplication\tdiscovery_discoveryserviceapplication_discoveryserviceapplication\tcontains;discovery_discoveryserviceapplication_discoveryserviceapplication\tdiscovery_discoveryserviceapplication_discoveryserviceapplication_main\tmethod;discovery_discoveryserviceapplicationtests\tdiscovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests\tcontains;discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests\tdiscovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests_contextloads\tmethod;discovery_discoveryserviceintegrationtest\tdiscovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest\tcontains;discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest\tdiscovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testdescubrimientoexitoso\tmethod;discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest\tdiscovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testerrorregistro\tmethod;discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest\tdiscovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testregistroexitoso\tmethod;discoveryserviceapplication\tdiscoveryserviceapplication_discoveryserviceapplication\tcontains;discoveryserviceapplication_discoveryserviceapplication\tdiscoveryserviceapplication_discoveryserviceapplication_main\tmethod",
+  "nodes": [
+    {
+      "id": "discovery_discoveryserviceapplication",
+      "label": "DiscoveryServiceApplication.java",
+      "file_type": "code",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L1",
+      "community": 1,
+      "community_name": "Community 1"
+    },
+    {
+      "id": "discovery_discoveryserviceapplication_discoveryserviceapplication",
+      "label": "DiscoveryServiceApplication",
+      "file_type": "code",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L21",
+      "community": 1,
+      "community_name": "Community 1"
+    },
+    {
+      "id": "discovery_discoveryserviceapplication_discoveryserviceapplication_main",
+      "label": ".main()",
+      "file_type": "code",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L30",
+      "community": 1,
+      "community_name": "Community 1"
+    },
+    {
+      "id": "discovery_discoveryserviceapplicationtests",
+      "label": "DiscoveryServiceApplicationTests.java",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceApplicationTests.java",
+      "source_location": "L1",
+      "community": 2,
+      "community_name": "Community 2"
+    },
+    {
+      "id": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests",
+      "label": "DiscoveryServiceApplicationTests",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceApplicationTests.java",
+      "source_location": "L17",
+      "community": 2,
+      "community_name": "Community 2"
+    },
+    {
+      "id": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests_contextloads",
+      "label": ".contextLoads()",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceApplicationTests.java",
+      "source_location": "L24",
+      "community": 2,
+      "community_name": "Community 2"
+    },
+    {
+      "id": "discovery_discoveryserviceintegrationtest",
+      "label": "DiscoveryServiceIntegrationTest.java",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L1",
+      "community": 0,
+      "community_name": "Community 0"
+    },
+    {
+      "id": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "label": "DiscoveryServiceIntegrationTest",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L22",
+      "community": 0,
+      "community_name": "Community 0"
+    },
+    {
+      "id": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testregistroexitoso",
+      "label": ".testRegistroExitoso()",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L34",
+      "community": 0,
+      "community_name": "Community 0"
+    },
+    {
+      "id": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testerrorregistro",
+      "label": ".testErrorRegistro()",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L47",
+      "community": 0,
+      "community_name": "Community 0"
+    },
+    {
+      "id": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testdescubrimientoexitoso",
+      "label": ".testDescubrimientoExitoso()",
+      "file_type": "code",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L59",
+      "community": 0,
+      "community_name": "Community 0"
+    },
+    {
+      "id": "discoveryserviceapplication",
+      "label": "DiscoveryServiceApplication.java",
+      "file_type": "code",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L1",
+      "community": 3,
+      "community_name": "Community 3"
+    },
+    {
+      "id": "discoveryserviceapplication_discoveryserviceapplication",
+      "label": "DiscoveryServiceApplication",
+      "file_type": "code",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L16",
+      "community": 3,
+      "community_name": "Community 3"
+    },
+    {
+      "id": "discoveryserviceapplication_discoveryserviceapplication_main",
+      "label": ".main()",
+      "file_type": "code",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L25",
+      "community": 3,
+      "community_name": "Community 3"
+    }
+  ],
+  "links": [
+    {
+      "source": "discovery_discoveryserviceapplication",
+      "target": "discovery_discoveryserviceapplication_discoveryserviceapplication",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L21",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceapplication",
+      "_tgt": "discovery_discoveryserviceapplication_discoveryserviceapplication",
+      "confidence_score": 1
+    },
+    {
+      "source": "discovery_discoveryserviceapplication_discoveryserviceapplication",
+      "target": "discovery_discoveryserviceapplication_discoveryserviceapplication_main",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L30",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceapplication_discoveryserviceapplication",
+      "_tgt": "discovery_discoveryserviceapplication_discoveryserviceapplication_main",
+      "confidence_score": 1
+    },
+    {
+      "source": "discovery_discoveryserviceapplicationtests",
+      "target": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceApplicationTests.java",
+      "source_location": "L17",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceapplicationtests",
+      "_tgt": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests",
+      "confidence_score": 1
+    },
+    {
+      "source": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests",
+      "target": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests_contextloads",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceApplicationTests.java",
+      "source_location": "L24",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests",
+      "_tgt": "discovery_discoveryserviceapplicationtests_discoveryserviceapplicationtests_contextloads",
+      "confidence_score": 1
+    },
+    {
+      "source": "discovery_discoveryserviceintegrationtest",
+      "target": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L22",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceintegrationtest",
+      "_tgt": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "confidence_score": 1
+    },
+    {
+      "source": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "target": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testdescubrimientoexitoso",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L59",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "_tgt": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testdescubrimientoexitoso",
+      "confidence_score": 1
+    },
+    {
+      "source": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "target": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testerrorregistro",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L47",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "_tgt": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testerrorregistro",
+      "confidence_score": 1
+    },
+    {
+      "source": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "target": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testregistroexitoso",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/test/java/com/yanki/discovery/DiscoveryServiceIntegrationTest.java",
+      "source_location": "L34",
+      "weight": 1,
+      "_src": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest",
+      "_tgt": "discovery_discoveryserviceintegrationtest_discoveryserviceintegrationtest_testregistroexitoso",
+      "confidence_score": 1
+    },
+    {
+      "source": "discoveryserviceapplication",
+      "target": "discoveryserviceapplication_discoveryserviceapplication",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L16",
+      "weight": 1,
+      "_src": "discoveryserviceapplication",
+      "_tgt": "discoveryserviceapplication_discoveryserviceapplication",
+      "confidence_score": 1
+    },
+    {
+      "source": "discoveryserviceapplication_discoveryserviceapplication",
+      "target": "discoveryserviceapplication_discoveryserviceapplication_main",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main/java/com/yanki/discovery/DiscoveryServiceApplication.java",
+      "source_location": "L25",
+      "weight": 1,
+      "_src": "discoveryserviceapplication_discoveryserviceapplication",
+      "_tgt": "discoveryserviceapplication_discoveryserviceapplication_main",
+      "confidence_score": 1
+    }
+  ],
+  "hyperedges": []
+}

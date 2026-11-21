@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD Suppressions 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Suprimir Javadoc en DTOs (Lombok genera getters/setters) -->
+    <suppress files=".*/dto/.*\.java" checks="JavadocVariable"/>
+
+    <!-- Suprimir Javadoc en enums -->
+    <suppress files=".*/model/.*\.java" checks="JavadocVariable"/>
+
+    <!-- Suprimir MagicNumber en constantes de configuración conocidas -->
+    <suppress files=".*/adapter/.*\.java" checks="MagicNumber"/>
+
+    <!-- Suprimir LineLength en anotaciones largas de Swagger -->
+    <suppress files=".*/dto/.*\.java" checks="LineLength"/>
+
+    <!-- Suprimir ParameterName en lambdas cortas -->
+    <suppress files=".*/adapter/.*\.java" checks="ParameterName"/>
+
+    <!-- Suprimir HiddenField en builders de Lombok -->
+    <suppress files=".*/model/.*\.java" checks="HiddenField"/>
+</suppressions>

@@ -1,0 +1,1419 @@
+{
+  "info": {
+    "_postman_id": "a7f3c9d2-8b4e-4f1a-9c6d-2e5b7a8d3f01",
+    "name": "Yanki - Discovery Service (Eureka Server)",
+    "description": "Colección completa de endpoints del Discovery Service (Eureka Server) para la plataforma Yanki.\n\n**Servicio:** Service Discovery y registro de microservicios\n**Puerto:** 8761\n**Protocolo:** Eureka Client-Server\n\n**Cobertura de Casos de Prueba:**\n- CP-166: Registro de servicio en Eureka exitoso\n- CP-167: Heartbeat y renovación de lease\n- CP-168: Detección y evicción de instancia caída\n- CP-169: Self-Preservation mode (producción)\n- CP-170: API Gateway descubrimiento servicios (Fetch Registry)\n- CP-171: Health Indicators personalizados\n- CP-172: Dashboard Security (Basic Auth)\n- CP-173: Eureka HA Cluster\n- CP-174: Metadata registro\n\n**Autenticación:**\n- Endpoints `/eureka/**`: Basic Auth (admin:{{eurekaPassword}})\n- Endpoints `/actuator/**`: Sin autenticación\n\n**Variables de Entorno Requeridas:**\n- `baseUrl`: URL base del servicio (ej. http://localhost:8761)\n- `eurekaUser`: Usuario para Basic Auth (default: admin)\n- `eurekaPassword`: Contraseña para Basic Auth\n- `appName`: Nombre de aplicación en MAYÚSCULAS (ej. ACCOUNTS-SERVICE)\n- `instanceId`: ID de instancia (ej. accounts-service:172.20.0.5:8083)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{eurekaUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{eurekaPassword}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8761",
+      "description": "URL base del Discovery Service (Eureka Server)"
+    },
+    {
+      "key": "eurekaUser",
+      "value": "admin",
+      "description": "Usuario para autenticación Basic Auth del dashboard y API"
+    },
+    {
+      "key": "eurekaPassword",
+      "value": "changeit",
+      "description": "Contraseña para autenticación Basic Auth (en producción: secret inyectado)"
+    },
+    {
+      "key": "appName",
+      "value": "ACCOUNTS-SERVICE",
+      "description": "Nombre de la aplicación en MAYÚSCULAS para consultas al registry"
+    },
+    {
+      "key": "instanceId",
+      "value": "accounts-service:172.20.0.5:8083",
+      "description": "ID único de la instancia (formato: service-name:ip:port)"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Eureka Registry",
+      "description": "Endpoints para consultar el registry de Eureka.\n\n**Controller:** EurekaRegistryController\n**Base path:** /eureka\n**Autenticación:** Basic Auth obligatoria\n**Casos de prueba:** CP-166, CP-170, CP-174",
+      "item": [
+        {
+          "name": "GET Registry Completo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Content-Type esperado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps"]
+            },
+            "description": "## Descripción\n\nRetorna todas las aplicaciones registradas con sus instancias y metadata completa.\n\n**Uso típico:** Monitoreo, debugging, descubrimiento manual de servicios.\n\n**Respuesta incluye:**\n- Lista de aplicaciones con contador de instancias\n- Por instancia: Instance ID, Host, Port, Status, Metadata, Lease timestamps\n- Métricas globales: total, UP, DOWN, self-preservation mode\n\n## Casos de Prueba\n\n- **CP-170**: Gateway fetch registry - El API Gateway consulta este endpoint cada 30s para actualizar su routing table.\n- **CP-173**: HA Cluster - Verificar que los 3 nodos del cluster retornan el mismo registry.\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Registry obtenido exitosamente | EurekaRegistryResponse |\n| 401 | No autenticado - Credenciales Basic Auth requeridas | ApiError |\n| 500 | Error interno del servidor | ApiError |\n\n## Ejemplo de Respuesta 200\n\n```json\n{\n  \"applications\": [\n    {\n      \"name\": \"ACCOUNTS-SERVICE\",\n      \"instances\": [\n        {\n          \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n          \"appName\": \"ACCOUNTS-SERVICE\",\n          \"hostName\": \"172.20.0.5\",\n          \"ipAddress\": \"172.20.0.5\",\n          \"port\": 8083,\n          \"securePort\": 8443,\n          \"status\": \"UP\",\n          \"metadata\": {\n            \"version\": \"1.0.0\",\n            \"zone\": \"primary\",\n            \"api.version\": \"v1\",\n            \"canary\": \"false\",\n            \"weight\": \"100\",\n            \"deployment.environment\": \"docker\",\n            \"management.port\": \"8083\"\n          },\n          \"lastRenewalTimestamp\": 1731590400000,\n          \"registrationTimestamp\": 1731590355000,\n          \"evictionTimestamp\": 0,\n          \"canary\": false,\n          \"zone\": \"primary\",\n          \"apiVersion\": \"v1\",\n          \"weight\": 100,\n          \"version\": \"1.0.0\"\n        }\n      ]\n    }\n  ],\n  \"lastUpdatedTimestamp\": 1731590400000,\n  \"selfPreservationMode\": false,\n  \"totalInstances\": 1,\n  \"instancesUp\": 1,\n  \"instancesDown\": 0\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 - Registry Completo",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"applications\": [\n    {\n      \"name\": \"ACCOUNTS-SERVICE\",\n      \"instances\": [\n        {\n          \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n          \"appName\": \"ACCOUNTS-SERVICE\",\n          \"hostName\": \"172.20.0.5\",\n          \"ipAddress\": \"172.20.0.5\",\n          \"port\": 8083,\n          \"securePort\": 8443,\n          \"status\": \"UP\",\n          \"metadata\": {\n            \"version\": \"1.0.0\",\n            \"zone\": \"primary\",\n            \"api.version\": \"v1\",\n            \"canary\": \"false\",\n            \"weight\": \"100\",\n            \"deployment.environment\": \"docker\",\n            \"management.port\": \"8083\"\n          },\n          \"lastRenewalTimestamp\": 1731590400000,\n          \"registrationTimestamp\": 1731590355000,\n          \"evictionTimestamp\": 0,\n          \"canary\": false,\n          \"zone\": \"primary\",\n          \"apiVersion\": \"v1\",\n          \"weight\": 100,\n          \"version\": \"1.0.0\"\n        }\n      ]\n    }\n  ],\n  \"lastUpdatedTimestamp\": 1731590400000,\n  \"selfPreservationMode\": false,\n  \"totalInstances\": 1,\n  \"instancesUp\": 1,\n  \"instancesDown\": 0\n}"
+            },
+            {
+              "name": "401 - No Autenticado",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 401,\n  \"error\": \"Unauthorized\",\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"No autenticado - Credenciales Basic Auth requeridas\",\n  \"path\": \"/eureka/apps\"\n}"
+            },
+            {
+              "name": "500 - Error Interno",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps"]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"code\": \"INTERNAL_SERVER_ERROR\",\n  \"message\": \"Error interno del servidor\",\n  \"path\": \"/eureka/apps\",\n  \"details\": {\n    \"exception\": \"RuntimeException\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-170: Gateway fetch registry validation",
+                  "pm.test(\"[CP-170] Status 200 - Registry obtenido exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-170] Response es JSON application/json\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-170] Schema válido - EurekaRegistryResponse\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('applications').that.is.an('array');",
+                  "    pm.expect(jsonData).to.have.property('lastUpdatedTimestamp').that.is.a('number');",
+                  "    pm.expect(jsonData).to.have.property('selfPreservationMode').that.is.a('boolean');",
+                  "    pm.expect(jsonData).to.have.property('totalInstances').that.is.a('number');",
+                  "    pm.expect(jsonData).to.have.property('instancesUp').that.is.a('number');",
+                  "    pm.expect(jsonData).to.have.property('instancesDown').that.is.a('number');",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-170] Métricas consistentes\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalInstances).to.equal(jsonData.instancesUp + jsonData.instancesDown);",
+                  "    pm.expect(jsonData.lastUpdatedTimestamp).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-173] Self-preservation mode presente\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.selfPreservationMode).to.be.a('boolean');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Instancias por Aplicación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Content-Type esperado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}"]
+            },
+            "description": "## Descripción\n\nRetorna todas las instancias (UP y DOWN) de la aplicación especificada.\n\n**Parámetros:**\n- `appName`: Nombre de la aplicación en MAYÚSCULAS (ej. `ACCOUNTS-SERVICE`)\n\n**Respuesta:** Array de instancias con metadata completa.\n\n## Casos de Prueba\n\n- **CP-166**: Registro exitoso - Verificar que la instancia aparece en el registry tras el POST.\n- **CP-168**: Evicción - Verificar que la instancia desaparece del array tras ser evictada.\n- **CP-170**: Gateway fetch - El Gateway consulta este endpoint para obtener instancias por servicio.\n- **CP-174**: Metadata - Verificar que la metadata completa está presente en cada instancia.\n\n## Path Parameters\n\n| Parámetro | Tipo | Requerido | Descripción | Ejemplo |\n|-----------|------|-----------|-------------|---------|\n| appName | string | Sí | Nombre de la aplicación en MAYÚSCULAS | ACCOUNTS-SERVICE |\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Instancias obtenidas exitosamente | EurekaInstanceResponse[] |\n| 401 | No autenticado | ApiError |\n| 404 | Aplicación no encontrada en el registry | ApiError (code: APPLICATION_NOT_FOUND) |\n\n## Ejemplo de Respuesta 200\n\n```json\n[\n  {\n    \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n    \"appName\": \"ACCOUNTS-SERVICE\",\n    \"hostName\": \"172.20.0.5\",\n    \"ipAddress\": \"172.20.0.5\",\n    \"port\": 8083,\n    \"securePort\": 8443,\n    \"status\": \"UP\",\n    \"metadata\": {\n      \"version\": \"1.0.0\",\n      \"zone\": \"primary\",\n      \"api.version\": \"v1\",\n      \"canary\": \"false\",\n      \"weight\": \"100\",\n      \"deployment.environment\": \"docker\",\n      \"management.port\": \"8083\"\n    },\n    \"lastRenewalTimestamp\": 1731590400000,\n    \"registrationTimestamp\": 1731590355000,\n    \"evictionTimestamp\": 0,\n    \"canary\": false,\n    \"zone\": \"primary\",\n    \"apiVersion\": \"v1\",\n    \"weight\": 100,\n    \"version\": \"1.0.0\"\n  }\n]\n```"
+          },
+          "response": [
+            {
+              "name": "200 - Instancias Obtenidas",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n    \"appName\": \"ACCOUNTS-SERVICE\",\n    \"hostName\": \"172.20.0.5\",\n    \"ipAddress\": \"172.20.0.5\",\n    \"port\": 8083,\n    \"securePort\": 8443,\n    \"status\": \"UP\",\n    \"metadata\": {\n      \"version\": \"1.0.0\",\n      \"zone\": \"primary\",\n      \"api.version\": \"v1\",\n      \"canary\": \"false\",\n      \"weight\": \"100\",\n      \"deployment.environment\": \"docker\",\n      \"management.port\": \"8083\"\n    },\n    \"lastRenewalTimestamp\": 1731590400000,\n    \"registrationTimestamp\": 1731590355000,\n    \"evictionTimestamp\": 0,\n    \"canary\": false,\n    \"zone\": \"primary\",\n    \"apiVersion\": \"v1\",\n    \"weight\": 100,\n    \"version\": \"1.0.0\"\n  }\n]"
+            },
+            {
+              "name": "404 - Aplicación No Encontrada",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/NONEXISTENT-SERVICE",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "NONEXISTENT-SERVICE"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"code\": \"APPLICATION_NOT_FOUND\",\n  \"message\": \"Aplicación no encontrada en el registry: NONEXISTENT-SERVICE\",\n  \"path\": \"/eureka/apps/NONEXISTENT-SERVICE\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-166, CP-170, CP-174: Instancias por aplicación",
+                  "pm.test(\"[CP-166] Status 200 - Instancias obtenidas\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-170] Response es array de instancias\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-174] Cada instancia tiene metadata completa\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(instance) {",
+                  "        pm.expect(instance).to.have.property('instanceId');",
+                  "        pm.expect(instance).to.have.property('appName');",
+                  "        pm.expect(instance).to.have.property('hostName');",
+                  "        pm.expect(instance).to.have.property('ipAddress');",
+                  "        pm.expect(instance).to.have.property('port');",
+                  "        pm.expect(instance).to.have.property('status');",
+                  "        pm.expect(instance).to.have.property('metadata').that.is.an('object');",
+                  "        ",
+                  "        // CP-174: Metadata obligatoria",
+                  "        var metadata = instance.metadata;",
+                  "        pm.expect(metadata).to.have.property('version');",
+                  "        pm.expect(metadata).to.have.property('zone');",
+                  "        pm.expect(metadata).to.have.property('api.version');",
+                  "        pm.expect(metadata).to.have.property('canary');",
+                  "        pm.expect(metadata).to.have.property('weight');",
+                  "        pm.expect(metadata).to.have.property('deployment.environment');",
+                  "        pm.expect(metadata).to.have.property('management.port');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Instancias Healthy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Content-Type esperado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}/healthy",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}", "healthy"]
+            },
+            "description": "## Descripción\n\nRetorna solo instancias con status UP, útil para load balancing.\n\n**Diferencia con `/apps/{appName}`:** Filtra solo instancias `status=UP`.\nIdeal para API Gateway y clientes que necesitan endpoints saludables.\n\n## Casos de Prueba\n\n- **CP-170**: Gateway fetch - El Gateway usa este endpoint para obtener solo instancias healthy para routing.\n\n## Path Parameters\n\n| Parámetro | Tipo | Requerido | Descripción | Ejemplo |\n|-----------|------|-----------|-------------|---------|\n| appName | string | Sí | Nombre de la aplicación en MAYÚSCULAS | ACCOUNTS-SERVICE |\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Instancias healthy obtenidas | EurekaInstanceResponse[] |\n| 401 | No autenticado | ApiError |\n\n## Ejemplo de Respuesta 200\n\n```json\n[\n  {\n    \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n    \"appName\": \"ACCOUNTS-SERVICE\",\n    \"hostName\": \"172.20.0.5\",\n    \"ipAddress\": \"172.20.0.5\",\n    \"port\": 8083,\n    \"securePort\": 8443,\n    \"status\": \"UP\",\n    \"metadata\": {\n      \"version\": \"1.0.0\",\n      \"zone\": \"primary\",\n      \"api.version\": \"v1\",\n      \"canary\": \"false\",\n      \"weight\": \"100\",\n      \"deployment.environment\": \"docker\",\n      \"management.port\": \"8083\"\n    },\n    \"lastRenewalTimestamp\": 1731590400000,\n    \"registrationTimestamp\": 1731590355000,\n    \"evictionTimestamp\": 0,\n    \"canary\": false,\n    \"zone\": \"primary\",\n    \"apiVersion\": \"v1\",\n    \"weight\": 100,\n    \"version\": \"1.0.0\"\n  }\n]\n```"
+          },
+          "response": [
+            {
+              "name": "200 - Instancias Healthy",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/healthy",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "healthy"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n    \"appName\": \"ACCOUNTS-SERVICE\",\n    \"hostName\": \"172.20.0.5\",\n    \"ipAddress\": \"172.20.0.5\",\n    \"port\": 8083,\n    \"securePort\": 8443,\n    \"status\": \"UP\",\n    \"metadata\": {\n      \"version\": \"1.0.0\",\n      \"zone\": \"primary\",\n      \"api.version\": \"v1\",\n      \"canary\": \"false\",\n      \"weight\": \"100\",\n      \"deployment.environment\": \"docker\",\n      \"management.port\": \"8083\"\n    },\n    \"lastRenewalTimestamp\": 1731590400000,\n    \"registrationTimestamp\": 1731590355000,\n    \"evictionTimestamp\": 0,\n    \"canary\": false,\n    \"zone\": \"primary\",\n    \"apiVersion\": \"v1\",\n    \"weight\": 100,\n    \"version\": \"1.0.0\"\n  }\n]"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-170: Instancias healthy para load balancing",
+                  "pm.test(\"[CP-170] Status 200 - Instancias healthy obtenidas\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-170] Todas las instancias tienen status UP\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    jsonData.forEach(function(instance) {",
+                  "        pm.expect(instance.status).to.equal('UP');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Instancia por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Content-Type esperado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}/{{instanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}", "{{instanceId}}"]
+            },
+            "description": "## Descripción\n\nRetorna el detalle de una instancia específica.\n\n**Parámetros:**\n- `appName`: Nombre de la aplicación (ej. `ACCOUNTS-SERVICE`)\n- `instanceId`: ID completo formato `service-name:ip:port` (ej. `accounts-service:172.20.0.5:8083`)\n\n## Casos de Prueba\n\n- **CP-166**: Registro exitoso - Verificar que la instancia registrada es accesible por ID.\n- **CP-167**: Heartbeat - Verificar que `lastRenewalTimestamp` se actualiza tras cada heartbeat.\n- **CP-168**: Evicción - Verificar que la instancia retorna 404 tras ser evictada.\n- **CP-174**: Metadata - Verificar que la metadata completa está presente.\n\n## Path Parameters\n\n| Parámetro | Tipo | Requerido | Descripción | Ejemplo |\n|-----------|------|-----------|-------------|---------|\n| appName | string | Sí | Nombre de la aplicación en MAYÚSCULAS | ACCOUNTS-SERVICE |\n| instanceId | string | Sí | ID único (formato: service:ip:port) | accounts-service:172.20.0.5:8083 |\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Instancia encontrada | EurekaInstanceResponse |\n| 401 | No autenticado | ApiError |\n| 404 | Instancia no encontrada | ApiError (code: INSTANCE_NOT_FOUND) |\n\n## Ejemplo de Respuesta 200\n\n```json\n{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"appName\": \"ACCOUNTS-SERVICE\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"status\": \"UP\",\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  },\n  \"lastRenewalTimestamp\": 1731590400000,\n  \"registrationTimestamp\": 1731590355000,\n  \"evictionTimestamp\": 0,\n  \"canary\": false,\n  \"zone\": \"primary\",\n  \"apiVersion\": \"v1\",\n  \"weight\": 100,\n  \"version\": \"1.0.0\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 - Instancia Encontrada",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/{{instanceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "{{instanceId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"appName\": \"ACCOUNTS-SERVICE\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"status\": \"UP\",\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  },\n  \"lastRenewalTimestamp\": 1731590400000,\n  \"registrationTimestamp\": 1731590355000,\n  \"evictionTimestamp\": 0,\n  \"canary\": false,\n  \"zone\": \"primary\",\n  \"apiVersion\": \"v1\",\n  \"weight\": 100,\n  \"version\": \"1.0.0\"\n}"
+            },
+            {
+              "name": "404 - Instancia No Encontrada",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/nonexistent:0.0.0.0:0",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "nonexistent:0.0.0.0:0"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"code\": \"INSTANCE_NOT_FOUND\",\n  \"message\": \"Instancia no encontrada: nonexistent:0.0.0.0:0\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE/nonexistent:0.0.0.0:0\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-166, CP-167, CP-174: Instancia por ID",
+                  "pm.test(\"[CP-166] Status 200 - Instancia encontrada\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-166] Schema válido - EurekaInstanceResponse\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('instanceId');",
+                  "    pm.expect(jsonData).to.have.property('appName');",
+                  "    pm.expect(jsonData).to.have.property('hostName');",
+                  "    pm.expect(jsonData).to.have.property('ipAddress');",
+                  "    pm.expect(jsonData).to.have.property('port');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('metadata');",
+                  "    pm.expect(jsonData).to.have.property('lastRenewalTimestamp');",
+                  "    pm.expect(jsonData).to.have.property('registrationTimestamp');",
+                  "    pm.expect(jsonData).to.have.property('evictionTimestamp');",
+                  "    pm.expect(jsonData).to.have.property('canary');",
+                  "    pm.expect(jsonData).to.have.property('zone');",
+                  "    pm.expect(jsonData).to.have.property('apiVersion');",
+                  "    pm.expect(jsonData).to.have.property('weight');",
+                  "    pm.expect(jsonData).to.have.property('version');",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-174] Metadata completa con 7 campos obligatorios\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var metadata = jsonData.metadata;",
+                  "    pm.expect(metadata).to.have.property('version');",
+                  "    pm.expect(metadata).to.have.property('zone');",
+                  "    pm.expect(metadata).to.have.property('api.version');",
+                  "    pm.expect(metadata).to.have.property('canary');",
+                  "    pm.expect(metadata).to.have.property('weight');",
+                  "    pm.expect(metadata).to.have.property('deployment.environment');",
+                  "    pm.expect(metadata).to.have.property('management.port');",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-167] Timestamps válidos\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.lastRenewalTimestamp).to.be.a('number').and.be.greaterThan(0);",
+                  "    pm.expect(jsonData.registrationTimestamp).to.be.a('number').and.be.greaterThan(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Eureka Protocol",
+      "description": "Endpoints internos del protocolo Eureka usados por clientes Eureka (@EnableEurekaClient).\n\n**Controller:** EurekaProtocolController\n**Base path:** /eureka/apps\n**Autenticación:** Eureka Auth (Basic Auth en producción)\n**Casos de prueba:** CP-166, CP-167, CP-168",
+      "item": [
+        {
+          "name": "POST Registrar Instancia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "Body en formato JSON"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Content-Type esperado"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}"]
+            },
+            "description": "## Descripción\n\nEndpoint interno para registro automático de clientes Eureka al arrancar.\n\n**Flujo:**\n1. Cliente Eureka inicia y obtiene config de Config Server\n2. Cliente envía POST con InstanceInfo completo + metadata\n3. Eureka Server valida, persiste en registry, retorna 204\n4. Cliente inicia heartbeats cada 10s (PUT)\n\n**Metadata obligatoria en request:**\n- `instanceId`: Formato `service:ip:port`\n- `hostName`, `ipAddr`, `port`, `securePort`\n- `metadata`: version, zone, api.version, canary, weight, deployment.environment, management.port\n\n## Casos de Prueba\n\n- **CP-166**: Registro exitoso - El cliente se registra y aparece UP en el registry.\n- **CP-174**: Metadata - Verificar que los 7 campos de metadata se registran correctamente.\n\n## Path Parameters\n\n| Parámetro | Tipo | Requerido | Descripción | Ejemplo |\n|-----------|------|-----------|-------------|---------|\n| appName | string | Sí | Nombre de la aplicación en MAYÚSCULAS | ACCOUNTS-SERVICE |\n\n## Request Body (EurekaInstanceRequest)\n\n| Campo | Tipo | Requerido | Descripción | Validación |\n|-------|------|-----------|-------------|------------|\n| instanceId | string | Sí | ID único (formato: service:ip:port) | Pattern: ^[a-z0-9-]+:[0-9.]+:[0-9]+$ |\n| hostName | string | Sí | Hostname del host | Not blank |\n| ipAddress | string | Sí | Dirección IPv4 | Pattern: IPv4 válido |\n| port | integer | Sí | Puerto HTTP | Positive, 1-65535 |\n| securePort | integer | No | Puerto HTTPS | 1-65535 |\n| metadata | object | Sí | Metadata rica | 7 campos obligatorios |\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 204 | Instancia registrada exitosamente | No Content |\n| 400 | Request inválido - JSON malformado o campos obligatorios faltantes | ApiError (code: INVALID_INSTANCE_METADATA) |\n| 401 | No autenticado | ApiError |\n| 409 | Conflicto - Instancia ya registrada con mismo ID | ApiError |\n| 500 | Error interno del servidor | ApiError |\n\n## Ejemplo de Request Body\n\n```json\n{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "204 - Registrado Exitosamente",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "400 - Metadata Inválida",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"instanceId\": \"invalid-format\",\n  \"hostName\": \"\",\n  \"ipAddress\": \"not-an-ip\",\n  \"port\": -1,\n  \"metadata\": {}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"code\": \"INVALID_INSTANCE_METADATA\",\n  \"message\": \"Metadata incompleta: faltan campos obligatorios\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE\"\n}"
+            },
+            {
+              "name": "409 - Instancia Ya Registrada",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 409,\n  \"error\": \"Conflict\",\n  \"code\": \"SELF_PRESERVATION_UNEXPECTED\",\n  \"message\": \"Instancia ya registrada con mismo ID: accounts-service:172.20.0.5:8083\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-166: Registro de instancia exitoso",
+                  "pm.test(\"[CP-166] Status 204 - Instancia registrada exitosamente\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-166] No content en respuesta\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});",
+                  "",
+                  "// Post-registration: verificar que la instancia aparece en el registry",
+                  "pm.test(\"[CP-166] Instancia visible en registry tras registro\", function () {",
+                  "    pm.sendRequest({",
+                  "        url: pm.variables.get('baseUrl') + '/eureka/apps/' + pm.variables.get('appName') + '/' + pm.variables.get('instanceId'),",
+                  "        method: 'GET',",
+                  "        header: {",
+                  "            'Authorization': 'Basic ' + new Buffer(pm.variables.get('eurekaUser') + ':' + pm.variables.get('eurekaPassword')).toString('base64')",
+                  "        }",
+                  "    }, function (err, response) {",
+                  "        pm.expect(response.code).to.be.oneOf([200, 404]);",
+                  "        if (response.code === 200) {",
+                  "            var jsonData = response.json();",
+                  "            pm.expect(jsonData.status).to.equal('UP');",
+                  "            pm.expect(jsonData.instanceId).to.equal(pm.variables.get('instanceId'));",
+                  "        }",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Renovar Lease (Heartbeat)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}/{{instanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}", "{{instanceId}}"]
+            },
+            "description": "## Descripción\n\nEndpoint interno para heartbeat periódico de clientes Eureka.\n\n**Frecuencia:** Cada 10 segundos (configurable en cliente: `lease-renewal-interval-in-seconds`)\n\n**Comportamiento:**\n- Actualiza `lastRenewalTimestamp` en registry\n- Mantiene status UP si health check OK\n- Si 3 heartbeats fallidos (30s) → marca DOWN → evicción tras intervalo\n\n## Casos de Prueba\n\n- **CP-167**: Heartbeat exitoso - Lease renovado cada 10s, lastRenewal actualizado.\n- **CP-168**: Evicción - Tras 30s sin heartbeat, instancia marcada DOWN.\n\n## Path Parameters\n\n| Parámetro | Tipo | Requerido | Descripción | Ejemplo |\n|-----------|------|-----------|-------------|---------|\n| appName | string | Sí | Nombre de la aplicación en MAYÚSCULAS | ACCOUNTS-SERVICE |\n| instanceId | string | Sí | ID único (formato: service:ip:port) | accounts-service:172.20.0.5:8083 |\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Lease renovado exitosamente | No Content |\n| 401 | No autenticado | ApiError |\n| 404 | Instancia no encontrada en el registry | ApiError (code: INSTANCE_NOT_FOUND) |\n| 410 | Gone - Instancia expirada y evictada | ApiError |\n\n## Flujo de Heartbeat\n\n```\nCliente Eureka (cada 10s)\n    │\n    ▼ PUT /eureka/apps/ACCOUNTS-SERVICE/accounts-service:172.20.0.5:8083\nEureka Server\n    │\n    ├── Instancia existe → Actualizar lastRenewalTimestamp → 200 OK\n    ├── Instancia no existe → 404 Not Found\n    └── Instancia evictada → 410 Gone\n```"
+          },
+          "response": [
+            {
+              "name": "200 - Lease Renovado",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/{{instanceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "{{instanceId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "404 - Instancia No Encontrada",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/nonexistent:0.0.0.0:0",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "nonexistent:0.0.0.0:0"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"code\": \"INSTANCE_NOT_FOUND\",\n  \"message\": \"Instancia no encontrada: nonexistent:0.0.0.0:0\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE/nonexistent:0.0.0.0:0\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-167: Heartbeat y renovación de lease",
+                  "pm.test(\"[CP-167] Status 200 - Lease renovado exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-167] lastRenewalTimestamp actualizado\", function () {",
+                  "    pm.sendRequest({",
+                  "        url: pm.variables.get('baseUrl') + '/eureka/apps/' + pm.variables.get('appName') + '/' + pm.variables.get('instanceId'),",
+                  "        method: 'GET',",
+                  "        header: {",
+                  "            'Authorization': 'Basic ' + new Buffer(pm.variables.get('eurekaUser') + ':' + pm.variables.get('eurekaPassword')).toString('base64')",
+                  "        }",
+                  "    }, function (err, response) {",
+                  "        if (response.code === 200) {",
+                  "            var jsonData = response.json();",
+                  "            pm.expect(jsonData.lastRenewalTimestamp).to.be.a('number').and.be.greaterThan(0);",
+                  "            pm.expect(jsonData.status).to.equal('UP');",
+                  "        }",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Desregistrar Instancia",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}/{{instanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}", "{{instanceId}}"]
+            },
+            "description": "## Descripción\n\nEndpoint interno para desregistro graceful de clientes Eureka.\n\n**Flujo:**\n1. Cliente recibe señal de terminación (SIGTERM)\n2. Cliente envía DELETE a su propia instancia\n3. Eureka elimina del registry inmediatamente\n4. Publica evento `yanki.discovery.instance.deregistered.v1`\n5. Réplica desregistro a peers (HA cluster)\n\n## Casos de Prueba\n\n- **CP-166**: Desregistro graceful - La instancia se elimina del registry.\n- **CP-168**: Evicción - Tras desregistro, la instancia no aparece en GET.\n\n## Path Parameters\n\n| Parámetro | Tipo | Requerido | Descripción | Ejemplo |\n|-----------|------|-----------|-------------|---------|\n| appName | string | Sí | Nombre de la aplicación en MAYÚSCULAS | ACCOUNTS-SERVICE |\n| instanceId | string | Sí | ID único (formato: service:ip:port) | accounts-service:172.20.0.5:8083 |\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Instancia desregistrada exitosamente | No Content |\n| 401 | No autenticado | ApiError |\n| 404 | Instancia no encontrada (idempotente) | ApiError (code: INSTANCE_NOT_FOUND) |\n\n## Nota de Idempotencia\n\nEl desregistro es idempotente: si la instancia ya no existe en el registry, el DELETE retorna 200 sin error."
+          },
+          "response": [
+            {
+              "name": "200 - Desregistrada Exitosamente",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/{{instanceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "{{instanceId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "404 - Instancia No Encontrada (Idempotente)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/nonexistent:0.0.0.0:0",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "nonexistent:0.0.0.0:0"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"code\": \"INSTANCE_NOT_FOUND\",\n  \"message\": \"Instancia no encontrada (idempotente): nonexistent:0.0.0.0:0\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE/nonexistent:0.0.0.0:0\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-166, CP-168: Desregistro de instancia",
+                  "pm.test(\"[CP-166] Status 200 - Instancia desregistrada exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Post-deregistration: verificar que la instancia ya no aparece",
+                  "pm.test(\"[CP-168] Instancia eliminada del registry\", function () {",
+                  "    pm.sendRequest({",
+                  "        url: pm.variables.get('baseUrl') + '/eureka/apps/' + pm.variables.get('appName') + '/' + pm.variables.get('instanceId'),",
+                  "        method: 'GET',",
+                  "        header: {",
+                  "            'Authorization': 'Basic ' + new Buffer(pm.variables.get('eurekaUser') + ':' + pm.variables.get('eurekaPassword')).toString('base64')",
+                  "        }",
+                  "    }, function (err, response) {",
+                  "        pm.expect(response.code).to.equal(404);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Health & Info",
+      "description": "Endpoints de health check e información del Eureka Server.\n\n**Controller:** EurekaHealthController\n**Base path:** /actuator\n**Autenticación:** Sin autenticación (accesible para health checks y load balancers)\n**Casos de prueba:** CP-171, CP-172",
+      "item": [
+        {
+          "name": "GET Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Content-Type esperado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            },
+            "description": "## Descripción\n\nVerifica el estado del servidor Eureka y el registry.\n\n**Lógica de determinación de status:**\n- `UP`: Registry operativo, al menos una instancia UP\n- `DOWN`: Todas las instancias DOWN o registry vacío con instancias registradas\n- `OUT_OF_SERVICE`: Registry vacío (ningún servicio registrado)\n\n**Componentes verificados:**\n- `eureka`: Estado del registry (instancias UP/DOWN, self-preservation)\n- `diskSpace`: Espacio en disco del contenedor\n\n**Uso en Docker:**\n```yaml\nhealthcheck:\n  test: [\"CMD\", \"wget\", \"-q\", \"--spider\", \"http://localhost:8761/actuator/health\"]\n  interval: 10s\n  timeout: 5s\n  retries: 5\n  start_period: 20s\n```\n\n## Casos de Prueba\n\n- **CP-171**: Health indicators - Verificar status UP con componentes eureka y diskSpace.\n- **CP-172**: Dashboard security - Este endpoint es accesible sin autenticación.\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Health check completado (status puede ser UP, DOWN, OUT_OF_SERVICE) | EurekaHealthResponse |\n| 503 | Servicio no disponible (status DOWN) | ApiError |\n\n## Ejemplo de Respuesta 200 (UP)\n\n```json\n{\n  \"status\": \"UP\",\n  \"components\": {\n    \"eureka\": {\n      \"status\": \"UP\",\n      \"details\": {\n        \"totalInstances\": 1,\n        \"instancesUp\": 1,\n        \"instancesDown\": 0,\n        \"selfPreservationMode\": false\n      }\n    },\n    \"diskSpace\": {\n      \"status\": \"UP\",\n      \"details\": {\n        \"total\": 2147483648,\n        \"free\": 1073741824\n      }\n    }\n  },\n  \"timestamp\": 1731590400000\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 - Health UP",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/actuator/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["actuator", "health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"UP\",\n  \"components\": {\n    \"eureka\": {\n      \"status\": \"UP\",\n      \"details\": {\n        \"totalInstances\": 1,\n        \"instancesUp\": 1,\n        \"instancesDown\": 0,\n        \"selfPreservationMode\": false\n      }\n    },\n    \"diskSpace\": {\n      \"status\": \"UP\",\n      \"details\": {\n        \"total\": 2147483648,\n        \"free\": 1073741824\n      }\n    }\n  },\n  \"timestamp\": 1731590400000\n}"
+            },
+            {
+              "name": "200 - Health DOWN (Todas Instancias DOWN)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/actuator/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["actuator", "health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"DOWN\",\n  \"components\": {\n    \"eureka\": {\n      \"status\": \"DOWN\",\n      \"details\": {\n        \"totalInstances\": 1,\n        \"instancesUp\": 0,\n        \"instancesDown\": 1,\n        \"selfPreservationMode\": false\n      }\n    },\n    \"diskSpace\": {\n      \"status\": \"UP\",\n      \"details\": {\n        \"total\": 2147483648,\n        \"free\": 1073741824\n      }\n    }\n  },\n  \"timestamp\": 1731590400000\n}"
+            },
+            {
+              "name": "200 - Health OUT_OF_SERVICE (Registry Vacío)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/actuator/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["actuator", "health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"OUT_OF_SERVICE\",\n  \"components\": {\n    \"eureka\": {\n      \"status\": \"OUT_OF_SERVICE\",\n      \"details\": {\n        \"totalInstances\": 0,\n        \"instancesUp\": 0,\n        \"instancesDown\": 0,\n        \"selfPreservationMode\": false\n      }\n    },\n    \"diskSpace\": {\n      \"status\": \"UP\",\n      \"details\": {\n        \"total\": 2147483648,\n        \"free\": 1073741824\n      }\n    }\n  },\n  \"timestamp\": 1731590400000\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-171: Health indicators personalizados",
+                  "pm.test(\"[CP-171] Status 200 - Health check completado\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-171] Schema válido - EurekaHealthResponse\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData.status).to.be.oneOf(['UP', 'DOWN', 'OUT_OF_SERVICE', 'UNKNOWN']);",
+                  "    pm.expect(jsonData).to.have.property('components').that.is.an('object');",
+                  "    pm.expect(jsonData).to.have.property('timestamp').that.is.a('number');",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-171] Componentes eureka y diskSpace presentes\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.components).to.have.property('eureka');",
+                  "    pm.expect(jsonData.components).to.have.property('diskSpace');",
+                  "    ",
+                  "    var eureka = jsonData.components.eureka;",
+                  "    pm.expect(eureka).to.have.property('status');",
+                  "    pm.expect(eureka).to.have.property('details');",
+                  "    pm.expect(eureka.details).to.have.property('totalInstances');",
+                  "    pm.expect(eureka.details).to.have.property('instancesUp');",
+                  "    pm.expect(eureka.details).to.have.property('instancesDown');",
+                  "    pm.expect(eureka.details).to.have.property('selfPreservationMode');",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-172] Accesible sin autenticación\", function () {",
+                  "    pm.sendRequest({",
+                  "        url: pm.variables.get('baseUrl') + '/actuator/health',",
+                  "        method: 'GET'",
+                  "    }, function (err, response) {",
+                  "        pm.expect(response.code).to.equal(200);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Service Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Content-Type esperado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "info"]
+            },
+            "description": "## Descripción\n\nRetorna información básica del servicio: nombre, versión, descripción, puerto.\n\n**Sin autenticación requerida.**\n\n## Casos de Prueba\n\n- **CP-171**: Health indicators - Complementario al health check.\n\n## Respuestas Esperadas\n\n| Código | Descripción | Schema |\n|--------|-------------|--------|\n| 200 | Información del servicio | Map<String, Object> |\n\n## Ejemplo de Respuesta 200\n\n```json\n{\n  \"service\": \"discovery-service\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Eureka Server para Service Discovery\",\n  \"port\": 8761\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 - Info del Servicio",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/actuator/info",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["actuator", "info"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"discovery-service\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Eureka Server para Service Discovery\",\n  \"port\": 8761\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// CP-171: Info endpoint",
+                  "pm.test(\"[CP-171] Status 200 - Info obtenida\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"[CP-171] Campos de info presentes\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('service').that.equals('discovery-service');",
+                  "    pm.expect(jsonData).to.have.property('version').that.equals('1.0.0');",
+                  "    pm.expect(jsonData).to.have.property('description');",
+                  "    pm.expect(jsonData).to.have.property('port').that.equals(8761);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Error Responses Reference",
+      "description": "Referencia de todos los códigos de error de negocio del Discovery Service.\n\n**Fuente:** GlobalExceptionHandler.java + DiscoveryBusinessException.java\n\n**Uso:** Estos ejemplos muestran la estructura exacta de cada error para validación en tests.\n\n## Tabla de Códigos de Error\n\n| Código | HTTP Status | Descripción | Endpoint afectado |\n|--------|-------------|-------------|-------------------|\n| INSTANCE_NOT_FOUND | 404 | Instancia no encontrada en el registry | GET /apps/{app}/{id}, PUT /apps/{app}/{id}, DELETE /apps/{app}/{id} |\n| APPLICATION_NOT_FOUND | 404 | Aplicación no registrada en Eureka | GET /apps/{appName} |\n| INVALID_INSTANCE_METADATA | 400 | Metadata de instancia inválida o incompleta | POST /apps/{appName} |\n| EUREKA_CONFIG_ERROR | 500 | Error en la configuración de Eureka Server | Todos |\n| PEER_COMMUNICATION_ERROR | 503 | Error de comunicación con peer Eureka (HA cluster) | Todos (en HA) |\n| REGISTRY_REPLICATION_ERROR | 503 | Error en la replicación del registry entre peers | POST, PUT, DELETE (en HA) |\n| SECURITY_CONFIG_ERROR | 403 | Configuración de seguridad inválida | Todos |\n| SELF_PRESERVATION_UNEXPECTED | 409 | Self-preservation mode activado inesperadamente | POST /apps/{appName} |\n| INTERNAL_SERVER_ERROR | 500 | Error interno no controlado | Todos |",
+      "item": [
+        {
+          "name": "Ejemplo 400 - INVALID_INSTANCE_METADATA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instanceId\": \"invalid-format\",\n  \"hostName\": \"\",\n  \"ipAddress\": \"not-an-ip\",\n  \"port\": -1,\n  \"metadata\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}"]
+            },
+            "description": "Ejemplo de error 400: Metadata inválida.\n\n**Causa:** Campos obligatorios faltantes o con formato incorrecto.\n**Código de negocio:** INVALID_INSTANCE_METADATA"
+          },
+          "response": [
+            {
+              "name": "400 - Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"instanceId\": \"invalid-format\",\n  \"hostName\": \"\",\n  \"ipAddress\": \"not-an-ip\",\n  \"port\": -1,\n  \"metadata\": {}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"code\": \"INVALID_INSTANCE_METADATA\",\n  \"message\": \"Metadata incompleta: faltan campos obligatorios\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 403 - SECURITY_CONFIG_ERROR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps"]
+            },
+            "description": "Ejemplo de error 403: Configuración de seguridad inválida.\n\n**Causa:** Credenciales de seguridad faltantes o mal configuradas en producción.\n**Código de negocio:** SECURITY_CONFIG_ERROR"
+          },
+          "response": [
+            {
+              "name": "403 - Forbidden",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 403,\n  \"error\": \"Forbidden\",\n  \"code\": \"SECURITY_CONFIG_ERROR\",\n  \"message\": \"Configuración de seguridad inválida\",\n  \"path\": \"/eureka/apps\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 404 - INSTANCE_NOT_FOUND",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}/nonexistent:0.0.0.0:0",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}", "nonexistent:0.0.0.0:0"]
+            },
+            "description": "Ejemplo de error 404: Instancia no encontrada.\n\n**Causa:** La instancia solicitada no existe en el registry.\n**Código de negocio:** INSTANCE_NOT_FOUND"
+          },
+          "response": [
+            {
+              "name": "404 - Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}/nonexistent:0.0.0.0:0",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}", "nonexistent:0.0.0.0:0"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"code\": \"INSTANCE_NOT_FOUND\",\n  \"message\": \"Instancia no encontrada: nonexistent:0.0.0.0:0\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE/nonexistent:0.0.0.0:0\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 404 - APPLICATION_NOT_FOUND",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/NONEXISTENT-SERVICE",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "NONEXISTENT-SERVICE"]
+            },
+            "description": "Ejemplo de error 404: Aplicación no encontrada.\n\n**Causa:** No hay instancias registradas para la aplicación solicitada.\n**Código de negocio:** APPLICATION_NOT_FOUND"
+          },
+          "response": [
+            {
+              "name": "404 - Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/NONEXISTENT-SERVICE",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "NONEXISTENT-SERVICE"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"code\": \"APPLICATION_NOT_FOUND\",\n  \"message\": \"Aplicación no encontrada en el registry: NONEXISTENT-SERVICE\",\n  \"path\": \"/eureka/apps/NONEXISTENT-SERVICE\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 409 - SELF_PRESERVATION_UNEXPECTED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}"]
+            },
+            "description": "Ejemplo de error 409: Conflicto con self-preservation.\n\n**Causa:** Intento de registrar una instancia cuando el self-preservation mode está activado inesperadamente.\n**Código de negocio:** SELF_PRESERVATION_UNEXPECTED"
+          },
+          "response": [
+            {
+              "name": "409 - Conflict",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"metadata\": {}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 409,\n  \"error\": \"Conflict\",\n  \"code\": \"SELF_PRESERVATION_UNEXPECTED\",\n  \"message\": \"Self-preservation mode activado inesperadamente\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 500 - EUREKA_CONFIG_ERROR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps"]
+            },
+            "description": "Ejemplo de error 500: Error de configuración de Eureka.\n\n**Causa:** Error interno en la configuración del Eureka Server.\n**Código de negocio:** EUREKA_CONFIG_ERROR"
+          },
+          "response": [
+            {
+              "name": "500 - Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps"]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"code\": \"EUREKA_CONFIG_ERROR\",\n  \"message\": \"Error en la configuración de Eureka Server\",\n  \"path\": \"/eureka/apps\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 500 - INTERNAL_SERVER_ERROR (Genérico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps"]
+            },
+            "description": "Ejemplo de error 500: Excepción genérica no controlada.\n\n**Causa:** Cualquier excepción no manejada por el sistema.\n**Código de negocio:** INTERNAL_SERVER_ERROR"
+          },
+          "response": [
+            {
+              "name": "500 - Internal Server Error (Genérico)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps"]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"code\": \"INTERNAL_SERVER_ERROR\",\n  \"message\": \"Error interno del servidor\",\n  \"path\": \"/eureka/apps\",\n  \"details\": {\n    \"exception\": \"NullPointerException\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 503 - PEER_COMMUNICATION_ERROR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}"]
+            },
+            "description": "Ejemplo de error 503: Error de comunicación con peer.\n\n**Causa:** En un cluster HA, un peer Eureka no responde.\n**Código de negocio:** PEER_COMMUNICATION_ERROR"
+          },
+          "response": [
+            {
+              "name": "503 - Service Unavailable (Peer)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"metadata\": {}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 503,\n  \"error\": \"Service Unavailable\",\n  \"code\": \"PEER_COMMUNICATION_ERROR\",\n  \"message\": \"Error de comunicación con peer Eureka: eureka-2:8761\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ejemplo 503 - REGISTRY_REPLICATION_ERROR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"securePort\": 8443,\n  \"metadata\": {\n    \"version\": \"1.0.0\",\n    \"zone\": \"primary\",\n    \"api.version\": \"v1\",\n    \"canary\": \"false\",\n    \"weight\": \"100\",\n    \"deployment.environment\": \"docker\",\n    \"management.port\": \"8083\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eureka", "apps", "{{appName}}"]
+            },
+            "description": "Ejemplo de error 503: Error de replicación del registry.\n\n**Causa:** En un cluster HA, la replicación del registry entre peers falla.\n**Código de negocio:** REGISTRY_REPLICATION_ERROR"
+          },
+          "response": [
+            {
+              "name": "503 - Service Unavailable (Replication)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"instanceId\": \"accounts-service:172.20.0.5:8083\",\n  \"hostName\": \"172.20.0.5\",\n  \"ipAddress\": \"172.20.0.5\",\n  \"port\": 8083,\n  \"metadata\": {}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/eureka/apps/{{appName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["eureka", "apps", "{{appName}}"]
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"timestamp\": \"2026-11-14T10:30:45.123Z\",\n  \"status\": 503,\n  \"error\": \"Service Unavailable\",\n  \"code\": \"REGISTRY_REPLICATION_ERROR\",\n  \"message\": \"Error en la replicación del registry entre peers\",\n  \"path\": \"/eureka/apps/ACCOUNTS-SERVICE\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

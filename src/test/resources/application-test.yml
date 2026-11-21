@@ -1,0 +1,10 @@
+spring:
+  cloud:
+    config:
+      import-check:
+        enabled: false
+server:
+  port: 0
+logging:
+  level:
+    com.yanki: INFO
