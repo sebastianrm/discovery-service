@@ -4,7 +4,7 @@
 
 - **Puerto:** `8761`
 - **Base de datos:** No tiene BD propia (servicios se registran en Eureka)
-- **Stack:** Java 17, Spring Boot 3.3.5, Spring Cloud Netflix Eureka Server 2023.0.3, springdoc-openapi
+- **Stack:** Java 17, Spring Boot 3.3.5, Spring Cloud 2023.0.3, WebFlux, RxJava 3, Spring Kafka, Resilience4j, springdoc-openapi
 - **Estado:** ✅ Implementado (con `@EnableEurekaServer`)
 
 ---
@@ -115,7 +115,9 @@ Eureka usa `/actuator/health` agregado para determinar estado UP/DOWN de la inst
 
 ---
 
-## 5. Configuración Servidor (application.yml / Config Server)
+## 5. Configuración Servidor (application.yml)
+
+### 5.1 application.yml Local (`src/main/resources/application.yml`)
 
 ```yaml
 server:
@@ -124,33 +126,30 @@ server:
 spring:
   application:
     name: discovery-service
-  security:
-    user:
-      name: ${EUREKA_USER:admin}
-      password: ${EUREKA_PASSWORD:changeit}  # Obligatorio en prod, sin default inseguro
   config:
     import: optional:configserver:${CONFIG_SERVER_URL}
+  doc:
+    swagger-ui:
+      path: /swagger-ui.html
+      enabled: true
+      operations-sorter: alpha
+      tags-sorter: alpha
+    api-docs:
+      path: /v3/api-docs
+      enabled: true
 
 eureka:
-  instance:
-    hostname: ${EUREKA_HOSTNAME:discovery-service}
-    prefer-ip-address: true
   client:
-    register-with-eureka: false      # Server NO se registra a sí mismo
-    fetch-registry: false            # Server NO necesita fetch registry
+    register-with-eureka: false
+    fetch-registry: false
     service-url:
-      defaultZone: http://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOSTNAME}:${SERVER_PORT}/eureka/
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:discovery-service}
+    prefer-ip-address: true
   server:
-    # Configuración HA y limpieza
-    enable-self-preservation: ${EUREKA_SERVER_ENABLE_SELF_PRESERVATION:false}  # Dev: false, Prod: true
-    eviction-interval-timer-in-ms: ${EUREKA_SERVER_EVICTION_INTERVAL_TIMER_MS:30000}
-    renewal-percent-threshold: 0.85
-    response-cache-update-interval-ms: 30000
-    peer-node-read-timeout-ms: 2000
-    peer-node-connect-timeout-ms: 2000
-  dashboard:
-    enabled: true
-    path: /
+    wait-time-in-ms-when-sync-empty: 0
+    response-cache-update-interval-ms: 5000
 
 management:
   endpoints:
@@ -160,21 +159,35 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.yanki.discovery: DEBUG
+    com.yanki.discovery.interfaces.rest.controller: INFO
+    com.yanki.discovery.domain.service: DEBUG
+    com.yanki.discovery.infrastructure.adapter: DEBUG
+    com.netflix.discovery: WARN
+    com.netflix.eureka: INFO
+    org.springframework: WARN
+    org.springframework.web: INFO
+    org.springdoc: DEBUG
 ```
 
-### 5.1 Variables de Entorno Críticas
+**Notas de configuración:**
+- SpringDoc/Swagger habilitado con paths personalizados
+- Logging estructurado por capas con `logback-spring.xml`
+- Eureka server sin self-preservation explícito (default del framework)
+- `response-cache-update-interval-ms: 5000` para actualizaciones más rápidas del cache
+
+### 5.2 Variables de Entorno
 
 | Variable | Default | Descripción | Obligatorio |
 |---|---|---|---|
 | `SERVER_PORT` | `8761` | Puerto HTTP | No |
-| `EUREKA_HOSTNAME` | `discovery-service` | Hostname para registro propio | Sí (Docker/prod) |
-| `EUREKA_USER` | `admin` | Usuario dashboard | Sí (prod) |
-| `EUREKA_PASSWORD` | `changeit` | Password dashboard | **Sí (prod, sin default inseguro)** |
-| `EUREKA_CLIENT_REGISTER_WITH_EUREKA` | `false` | Server no se auto-registra | No |
-| `EUREKA_CLIENT_FETCH_REGISTRY` | `false` | Server no fetch registry | No |
-| `EUREKA_SERVER_ENABLE_SELF_PRESERVATION` | `false` | **Dev: false** (prod: true) | No |
-| `EUREKA_SERVER_EVICTION_INTERVAL_TIMER_MS` | `30000` | Intervalo evicción (30s dev) | No |
-| `CONFIG_SERVER_URL` | `http://config-server:8888` | Config Server | Sí |
+| `EUREKA_INSTANCE_HOSTNAME` | `discovery-service` | Hostname del servidor | Sí (Docker/prod) |
+| `EUREKA_URL` | `http://localhost:8761/eureka/` | URL del Eureka Server | No |
+| `CONFIG_SERVER_URL` | _(sin default)_ | URL del Config Server | Sí (prod) |
 
 ---
 
@@ -226,17 +239,28 @@ services:
 
 ```dockerfile
 FROM maven:3.9-eclipse-temurin-17 AS build
-WORKDIR /app
+WORKDIR /build
 COPY pom.xml .
+RUN mvn -B -q dependency:go-offline
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -B clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
+RUN addgroup -S yanki && adduser -S yanki -G yanki
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /build/target/*.jar app.jar
+RUN chown -R yanki:yanki /app
+USER yanki
 EXPOSE 8761
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
 ```
+
+**Notas del Dockerfile:**
+- Multi-stage build con Maven 3.9 + Eclipse Temurin 17
+- Usuario no-root (`yanki`) para seguridad en contenedor
+- `dependency:go-offline` para caching de dependencias en CI/CD
+- `JAVA_OPTS` con `UseContainerSupport` para límites de memoria en contenedores
 
 ### Health Check Docker
 
@@ -291,14 +315,74 @@ curl -u admin:changeit http://localhost:8761/eureka/apps
 
 ---
 
-## 9. Estructura del Código
+## 9. Estructura del Código (Arquitectura Hexagonal)
 
 ```
-src/main/java/com/yanki/discovery
+src/main/java/com/yanki/discovery/
 ├── DiscoveryServiceApplication.java   # @SpringBootApplication + @EnableEurekaServer
-└── config
-    └── EurekaConfig.java              # Configuración adicional si necesaria
+├── domain/                            # Dominio puro (sin dependencias externas)
+│   ├── event/                         # Eventos de dominio (Kafka)
+│   │   ├── InstanceRegisteredEvent.java
+│   │   ├── InstanceDeregisteredEvent.java
+│   │   └── InstanceStatusChangedEvent.java
+│   ├── exception/
+│   │   └── DiscoveryBusinessException.java
+│   ├── model/
+│   │   ├── EurekaInstanceInfo.java    # Modelo de instancia
+│   │   └── EurekaRegistry.java        # Modelo de registry
+│   ├── port/
+│   │   ├── in/                        # Use cases (entrada)
+│   │   │   ├── RegisterInstanceUseCase.java
+│   │   │   ├── DeregisterInstanceUseCase.java
+│   │   │   ├── RenewLeaseUseCase.java
+│   │   │   ├── GetRegistryUseCase.java
+│   │   │   ├── GetApplicationInstancesUseCase.java
+│   │   │   └── GetEurekaHealthUseCase.java
+│   │   └── out/                       # Ports de salida
+│   │       ├── EurekaRegistryPort.java
+│   │       ├── EventPublisherPort.java
+│   │       ├── PeerSyncPort.java
+│   │       └── ConfigPort.java
+│   └── service/                       # Implementaciones de use cases
+│       ├── RegisterInstanceService.java
+│       ├── DeregisterInstanceService.java
+│       ├── RenewLeaseService.java
+│       ├── GetRegistryService.java
+│       ├── GetApplicationInstancesService.java
+│       └── GetEurekaHealthService.java
+├── infrastructure/                    # Adapters externos
+│   ├── adapter/
+│   │   ├── EurekaRegistryAdapter.java # Netflix EurekaClient
+│   │   ├── EventPublisherAdapter.java # Spring Kafka
+│   │   ├── PeerSyncAdapter.java      # Replicación HA
+│   │   └── ConfigAdapter.java        # Spring Cloud Config
+│   └── config/
+│       ├── InfrastructureConfig.java
+│       └── OpenApiConfig.java
+└── interfaces/                        # Interfaces de entrada
+    └── rest/
+        ├── controller/                # Controllers WebFlux
+        │   ├── EurekaProtocolController.java    # POST/PUT/DELETE /eureka/apps
+        │   ├── EurekaRegistryController.java    # GET /eureka/apps
+        │   └── EurekaHealthController.java      # GET /actuator/health
+        ├── dto/                       # DTOs de transferencia
+        │   ├── ApiError.java
+        │   ├── EurekaHealthResponse.java
+        │   ├── EurekaInstanceRequest.java
+        │   ├── EurekaInstanceResponse.java
+        │   └── EurekaRegistryResponse.java
+        ├── exception/
+        │   └── GlobalExceptionHandler.java
+        └── mapper/
+            └── EurekaRestMapper.java  # Mapeo DTO ↔ Domain
 ```
+
+### 9.1 Principios de Arquitectura
+
+- **Domain puro**: No importa infrastructure ni interfaces; solo modelos, ports y servicios
+- **Inversión de dependencias**: Domain define los ports; infrastructure los implementa
+- **Reactividad**: RxJava 3 en domain, Reactor (WebFlux) en interfaces, conversión vía `reactor-adapter-rxjava3`
+- **Eventos de dominio**: Publicados en Kafka (topics: `yanki.discovery.instance.*.v1)
 
 ---
 

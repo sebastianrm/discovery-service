@@ -17,12 +17,18 @@
 **Tu expertise incluye:**
 
 - **Java 17 + Spring Boot 3.3.5 + Spring Cloud 2023.0.3** (Config, Eureka Server, Gateway, CircuitBreaker)
+- **Spring WebFlux**: Stack reactivo completo (no Tomcat MVC)
+- **RxJava 3.1.10 + Reactor Adapter 3.5.2**: Programación reactiva en domain y adapters
+- **Spring Kafka**: Eventos de dominio publicados en Kafka (topics: yanki.discovery.instance.*.v1)
+- **Resilience4j 2.2.0**: Circuit breaker para resiliencia
 - **Spring Cloud Netflix Eureka Server**: Registro, heartbeat, evicción, dashboard, metadata, self-preservation, HA cluster
+- **Spring Cloud Netflix Eureka Client** (server-side): EurekaClient para consulta de registry
 - **Spring Cloud Config Client**: Configuración externalizada, fail-fast, retry con backoff
-- **Spring Cloud Netflix Eureka Client** (server-side): Configuración de peers (HA), regiones, zonas
-- **springdoc-openapi 2.6.0**: OpenAPI 3 (actuator mainly)
+- **springdoc-openapi-starter-webflux-ui 2.6.0**: OpenAPI 3 con Swagger UI en `/swagger-ui.html`
+- **Arquitectura Hexagonal**: Domain puro, ports (in/out), adapters, interfaces REST
 - **Checkstyle 10.21.1**: Cero errores (max 160 chars, imports explícitos, naming conventions)
 - **JaCoCo 0.8.12**: Cobertura de código ≥ 80%
+- **Testcontainers 1.20.1**: Tests de integración con Kafka
 - **Maven 3.9+**: Build, dependency management, plugins
 
 **Principios de desarrollo obligatorios:**
@@ -58,12 +64,16 @@
 | Capability | Implementation |
 |---|---|
 | **Language** | Java 17, Spring Boot 3.3.5, Spring Cloud 2023.0.3 |
-| **Discovery** | Spring Cloud Netflix Eureka Server |
+| **Reactive Stack** | Spring WebFlux + RxJava 3.1.10 + Reactor Adapter |
+| **Discovery** | Spring Cloud Netflix Eureka Server + EurekaClient (server-side) |
+| **Messaging** | Spring Kafka (eventos de dominio: yanki.discovery.instance.*.v1) |
+| **Resilience** | Resilience4j 2.2.0 (Circuit Breaker) |
 | **Config** | Spring Cloud Config Client (para leer config propia) |
-| **API Docs** | springdoc-openapi 2.6.0 (opcional, mainly actuator) |
-| **Quality** | Checkstyle, JaCoCo ≥ 80% |
-| **Testing** | JUnit 5, Testcontainers, Spring Boot Test |
-| **Container** | Docker multi-stage, healthcheck |
+| **API Docs** | springdoc-openapi-starter-webflux-ui 2.6.0 (Swagger UI) |
+| **Architecture** | Hexagonal (Domain, Infrastructure Adapters, Interfaces REST) |
+| **Quality** | Checkstyle 10.21.1, JaCoCo ≥ 80% |
+| **Testing** | JUnit 5, Testcontainers 1.20.1 (Kafka), Reactor Test, StepVerifier |
+| **Container** | Docker multi-stage (eclipse-temurin:17-jre-alpine, usuario no-root) |
 
 ---
 
@@ -101,17 +111,28 @@
 
 ```dockerfile
 FROM maven:3.9-eclipse-temurin-17 AS build
-WORKDIR /app
+WORKDIR /build
 COPY pom.xml .
+RUN mvn -B -q dependency:go-offline
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -B clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
+RUN addgroup -S yanki && adduser -S yanki -G yanki
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /build/target/*.jar app.jar
+RUN chown -R yanki:yanki /app
+USER yanki
 EXPOSE 8761
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
 ```
+
+**Notas del Dockerfile:**
+- Multi-stage build con Maven 3.9 + Eclipse Temurin 17
+- Usuario no-root (`yanki`) para seguridad en contenedor
+- `dependency:go-offline` para caching de dependencias en CI/CD
+- `JAVA_OPTS` con `UseContainerSupport` para límites de memoria en contenedores
 
 ### Environment Variables
 
@@ -127,7 +148,7 @@ ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
 | `EUREKA_SERVER_EVICTION_INTERVAL_TIMER_MS` | `30000` | Intervalo evicción (30s dev) | No |
 | `CONFIG_SERVER_URL` | `http://config-server:8888` | Config Server | Sí |
 
-### application.yml (Config Server: `discovery-service.yml`)
+### application.yml (Local - `src/main/resources/application.yml`)
 
 ```yaml
 server:
@@ -136,32 +157,30 @@ server:
 spring:
   application:
     name: discovery-service
-  security:
-    user:
-      name: ${EUREKA_USER:admin}
-      password: ${EUREKA_PASSWORD:changeit}
   config:
     import: optional:configserver:${CONFIG_SERVER_URL}
+  doc:
+    swagger-ui:
+      path: /swagger-ui.html
+      enabled: true
+      operations-sorter: alpha
+      tags-sorter: alpha
+    api-docs:
+      path: /v3/api-docs
+      enabled: true
 
 eureka:
-  instance:
-    hostname: ${EUREKA_HOSTNAME:discovery-service}
-    prefer-ip-address: true
   client:
     register-with-eureka: false
     fetch-registry: false
     service-url:
-      defaultZone: http://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOSTNAME}:${SERVER_PORT}/eureka/
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:discovery-service}
+    prefer-ip-address: true
   server:
-    enable-self-preservation: ${EUREKA_SERVER_ENABLE_SELF_PRESERVATION:false}
-    eviction-interval-timer-in-ms: ${EUREKA_SERVER_EVICTION_INTERVAL_TIMER_MS:30000}
-    renewal-percent-threshold: 0.85
-    response-cache-update-interval-ms: 30000
-    peer-node-read-timeout-ms: 2000
-    peer-node-connect-timeout-ms: 2000
-  dashboard:
-    enabled: true
-    path: /
+    wait-time-in-ms-when-sync-empty: 0
+    response-cache-update-interval-ms: 5000
 
 management:
   endpoints:
@@ -171,7 +190,27 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.yanki.discovery: DEBUG
+    com.yanki.discovery.interfaces.rest.controller: INFO
+    com.yanki.discovery.domain.service: DEBUG
+    com.yanki.discovery.infrastructure.adapter: DEBUG
+    com.netflix.discovery: WARN
+    com.netflix.eureka: INFO
+    org.springframework: WARN
+    org.springframework.web: INFO
+    org.springdoc: DEBUG
 ```
+
+**Notas de configuración:**
+- SpringDoc/Swagger habilitado con paths personalizados
+- Logging estructurado por capas con logback-spring.xml
+- Eureka server sin self-preservation explícito (default del framework)
+- `response-cache-update-interval-ms: 5000` para actualizaciones más rápidas del cache
+- Variables de entorno: `SERVER_PORT`, `CONFIG_SERVER_URL`, `EUREKA_URL`, `EUREKA_INSTANCE_HOSTNAME`
 
 ### Health Checks (Docker)
 
@@ -214,14 +253,77 @@ healthcheck:
 
 1. Config Server → Cargar configuración Eureka (`discovery-service.yml`)
 2. **Iniciar Eureka Server** (binding puerto 8761)
-3. HTTP server 8761 (Tomcat embebido)
+3. HTTP server 8761 (Netty/WebFlux embebido)
 4. Dashboard disponible en `/`
-5. Listo para recibir registros de clientes
+5. Swagger UI disponible en `/swagger-ui.html`
+6. Listo para recibir registros de clientes
 
 ### Shutdown
 
 1. Cerrar servidor HTTP → Eureka Server stop
 2. Clientes detectan caída en próximo fetch registry (30s)
+
+### Arquitectura Hexagonal
+
+```
+src/main/java/com/yanki/discovery/
+├── DiscoveryServiceApplication.java   # @SpringBootApplication + @EnableEurekaServer
+├── domain/
+│   ├── event/                         # Eventos de dominio (Kafka)
+│   │   ├── InstanceRegisteredEvent.java
+│   │   ├── InstanceDeregisteredEvent.java
+│   │   └── InstanceStatusChangedEvent.java
+│   ├── exception/
+│   │   └── DiscoveryBusinessException.java
+│   ├── model/
+│   │   ├── EurekaInstanceInfo.java    # Modelo de instancia
+│   │   └── EurekaRegistry.java        # Modelo de registry
+│   ├── port/
+│   │   ├── in/                        # Use cases (entrada)
+│   │   │   ├── RegisterInstanceUseCase.java
+│   │   │   ├── DeregisterInstanceUseCase.java
+│   │   │   ├── RenewLeaseUseCase.java
+│   │   │   ├── GetRegistryUseCase.java
+│   │   │   ├── GetApplicationInstancesUseCase.java
+│   │   │   └── GetEurekaHealthUseCase.java
+│   │   └── out/                       # Ports de salida
+│   │       ├── EurekaRegistryPort.java
+│   │       ├── EventPublisherPort.java
+│   │       ├── PeerSyncPort.java
+│   │       └── ConfigPort.java
+│   └── service/                       # Implementaciones de use cases
+│       ├── RegisterInstanceService.java
+│       ├── DeregisterInstanceService.java
+│       ├── RenewLeaseService.java
+│       ├── GetRegistryService.java
+│       ├── GetApplicationInstancesService.java
+│       └── GetEurekaHealthService.java
+├── infrastructure/
+│   ├── adapter/                       # Adapters de puertos de salida
+│   │   ├── EurekaRegistryAdapter.java # Netflix EurekaClient
+│   │   ├── EventPublisherAdapter.java # Spring Kafka
+│   │   ├── PeerSyncAdapter.java      # Replicación HA
+│   │   └── ConfigAdapter.java        # Spring Cloud Config
+│   └── config/
+│       ├── InfrastructureConfig.java
+│       └── OpenApiConfig.java
+└── interfaces/
+    └── rest/
+        ├── controller/                # Controllers WebFlux
+        │   ├── EurekaProtocolController.java    # POST/PUT/DELETE /eureka/apps
+        │   ├── EurekaRegistryController.java    # GET /eureka/apps
+        │   └── EurekaHealthController.java      # GET /actuator/health
+        ├── dto/                       # DTOs de transferencia
+        │   ├── ApiError.java
+        │   ├── EurekaHealthResponse.java
+        │   ├── EurekaInstanceRequest.java
+        │   ├── EurekaInstanceResponse.java
+        │   └── EurekaRegistryResponse.java
+        ├── exception/
+        │   └── GlobalExceptionHandler.java
+        └── mapper/
+            └── EurekaRestMapper.java  # Mapeo DTO ↔ Domain
+```
 
 ---
 
@@ -270,11 +372,32 @@ mvn clean verify
 
 | Test Type | Scope | Tools |
 |---|---|---|
-| **Unit** | Configuración Eureka properties, validation | JUnit 5, Mockito |
-| **Integration** | Testcontainers: Eureka Server + Client registration, heartbeat, evicción | Testcontainers, Spring Boot Test |
+| **Unit** | Domain services con StepVerifier (mockeando puertos de salida) | JUnit 5, Mockito, StepVerifier |
+| **Integration** | Testcontainers: Eureka Server + Client registration, heartbeat, evicción | Testcontainers 1.20.1, Spring Boot Test |
+| **Integration** | Dashboard Security: Basic Auth, 401/200 | Spring Boot Test |
+| **Integration** | Gateway Discovery: lb:// resolution | Testcontainers |
 | **Contract** | Verificar metadata instancia registrada (version, zone, api.version) | Testcontainers, JSON assertion |
 | **HA Cluster** | 3 nodos: replicación registry, peer sync, failover | Testcontainers (3 containers) |
-| **Security** | Dashboard Basic Auth: 401 sin credenciales, 200 con admin/password | Spring Security Test |
+| **Kafka** | Eventos de dominio publicados correctamente | Testcontainers (Kafka) |
+
+### Tests Implementados
+
+```
+src/test/java/com/yanki/discovery/
+├── DiscoveryServiceApplicationTests.java          # Spring Boot context
+├── DiscoveryServiceIntegrationTest.java           # Integration test base
+├── domain/service/
+│   ├── RegisterInstanceServiceTest.java           # StepVerifier + mocks
+│   ├── DeregisterInstanceServiceTest.java
+│   ├── RenewLeaseServiceTest.java
+│   ├── GetRegistryServiceTest.java
+│   ├── GetApplicationInstancesServiceTest.java
+│   ├── GetEurekaHealthServiceTest.java
+│   └── MetadataRegistrationServiceTest.java
+└── integration/
+    ├── DashboardSecurityIntegrationTest.java      # Security tests
+    └── GatewayDiscoveryIntegrationTest.java       # Gateway integration
+```
 
 ### Casos de Prueba (Trazabilidad CU-18)
 
