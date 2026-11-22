@@ -504,6 +504,7 @@ docker compose -f docker-compose.full.yml restart discovery-service
 | `Proyecto General vf.md` | Parte II, línea 76 | "Crear microservicio registro APIs con Eureka, habilitar panel control" |
 | `../CU-16-Infrestructura.md` | Sección 4.5 | Configuración Eureka Client estándar |
 | `../CU-19-Api-Gateway.md` | Sección 5.2 | Routing lb://service-name via Eureka |
+| `api/discovery-service.yaml` | Contrato OpenAPI 3.0 | Especificación completa con schemas, endpoints y errores |
 
 ---
 

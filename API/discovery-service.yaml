@@ -1,0 +1,387 @@
+openapi: 3.0.3
+info:
+  title: Yanki Discovery Service API
+  description: |
+    API REST de Service Discovery con Eureka Server de la plataforma bancaria Yanki.
+    
+    Permite consultar el registry de servicios registrados, verificar el estado de salud
+    y descubrir instancias disponibles para load balancing.
+    
+    **Características principales:**
+    - Health check del Eureka Server
+    - Registry completo de aplicaciones e instancias
+    - Consulta de instancias por aplicación
+    - Filtro de instancias healthy (UP)
+    - Consulta de instancia específica por ID
+  version: 1.0.0
+  contact:
+    name: Sebastian Retamal Morales
+    email: retamal.sebastian@gmail.com
+  license:
+    name: Proprietary
+    url: https://yanki.com/license
+
+servers:
+  - url: http://localhost:8761
+    description: Entorno local de desarrollo
+
+tags:
+  - name: Health
+    description: Health checks del Eureka Server
+  - name: Eureka Registry
+    description: Consulta de servicios e instancias registradas en Eureka
+
+paths:
+  /actuator/health:
+    get:
+      tags: [Health]
+      summary: Health check del Eureka Server
+      description: |
+        Verifica el estado del servidor Eureka y el registry.
+        
+        **Lógica de determinación de status:**
+        - UP: Registry operativo, al menos una instancia UP
+        - DOWN: Todas las instancias DOWN o registry vacío con instancias registradas
+        - OUT_OF_SERVICE: Registry vacío (ningún servicio registrado)
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Health check completado (status puede ser UP, DOWN, OUT_OF_SERVICE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EurekaHealthResponse'
+        '503':
+          description: Servicio no disponible (status DOWN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security: []
+
+  /actuator/info:
+    get:
+      tags: [Health]
+      summary: Información del servicio
+      description: Retorna información básica: nombre, versión, descripción, puerto
+      operationId: serviceInfo
+      responses:
+        '200':
+          description: Información del servicio
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  service: "discovery-service"
+                  version: "1.0.0"
+                  description: "Eureka Server para Service Discovery"
+                  port: 8761
+      security: []
+
+  /eureka/apps:
+    get:
+      tags: [Eureka Registry]
+      summary: Obtiene el registry completo de Eureka
+      description: |
+        Retorna todas las aplicaciones registradas con sus instancias y metadata completa.
+        Uso típico: Monitoreo, debugging, descubrimiento manual de servicios.
+      operationId: getRegistry
+      responses:
+        '200':
+          description: Registry obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EurekaRegistryResponse'
+        '401':
+          description: No autenticado - Credenciales Basic Auth requeridas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /eureka/apps/{appName}:
+    get:
+      tags: [Eureka Registry]
+      summary: Obtiene instancias de una aplicación
+      description: Retorna todas las instancias (UP y DOWN) de la aplicación especificada
+      operationId: getApplicationInstances
+      parameters:
+        - name: appName
+          in: path
+          required: true
+          description: Nombre de la aplicación en MAYÚSCULAS
+          schema:
+            type: string
+            pattern: "^[A-Z0-9-]+$"
+            example: "ACCOUNTS-SERVICE"
+      responses:
+        '200':
+          description: Instancias obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EurekaInstanceResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Aplicación no encontrada en el registry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /eureka/apps/{appName}/healthy:
+    get:
+      tags: [Eureka Registry]
+      summary: Obtiene instancias healthy de una aplicación
+      description: Retorna solo instancias con status UP, útil para load balancing
+      operationId: getHealthyInstances
+      parameters:
+        - name: appName
+          in: path
+          required: true
+          description: Nombre de la aplicación en MAYÚSCULAS
+          schema:
+            type: string
+            example: "ACCOUNTS-SERVICE"
+      responses:
+        '200':
+          description: Instancias healthy obtenidas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EurekaInstanceResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /eureka/apps/{appName}/{instanceId}:
+    get:
+      tags: [Eureka Registry]
+      summary: Obtiene una instancia por ID
+      description: Retorna el detalle de una instancia específica
+      operationId: getInstanceById
+      parameters:
+        - name: appName
+          in: path
+          required: true
+          description: Nombre de la aplicación en MAYÚSCULAS
+          schema:
+            type: string
+            example: "ACCOUNTS-SERVICE"
+        - name: instanceId
+          in: path
+          required: true
+          description: Identificador único de la instancia (formato: service:ip:port)
+          schema:
+            type: string
+            example: "accounts-service:172.20.0.5:8083"
+      responses:
+        '200':
+          description: Instancia encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EurekaInstanceResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Instancia no encontrada en el registry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+components:
+  schemas:
+    EurekaHealthResponse:
+      type: object
+      description: Respuesta de health check del Eureka Server
+      properties:
+        status:
+          type: string
+          description: |
+            Estado general del servicio.
+            - UP: Registry operativo, al menos una instancia UP
+            - DOWN: Todas las instancias DOWN
+            - OUT_OF_SERVICE: Registry vacío
+          enum: [UP, DOWN, OUT_OF_SERVICE]
+          example: "UP"
+        components:
+          type: object
+          description: Componentes verificados con su estado individual
+          additionalProperties:
+            $ref: '#/components/schemas/ComponentHealth'
+        timestamp:
+          type: integer
+          format: int64
+          description: Timestamp del health check en milisegundos
+          example: 1700000000000
+
+    ComponentHealth:
+      type: object
+      description: Estado de un componente individual del health check
+      properties:
+        status:
+          type: string
+          description: Estado del componente
+          enum: [UP, DOWN]
+          example: "UP"
+        details:
+          type: object
+          description: Detalles adicionales del componente
+          additionalProperties: true
+          example:
+            totalInstances: 10
+            instancesUp: 10
+            instancesDown: 0
+            selfPreservationMode: false
+
+    EurekaRegistryResponse:
+      type: object
+      description: Registry completo de Eureka con todas las aplicaciones e instancias
+      properties:
+        applications:
+          type: array
+          description: Lista de aplicaciones registradas
+          items:
+            $ref: '#/components/schemas/EurekaApplication'
+        totalInstances:
+          type: integer
+          description: Total de instancias registradas
+          example: 25
+        instancesUp:
+          type: integer
+          description: Total de instancias UP
+          example: 25
+        instancesDown:
+          type: integer
+          description: Total de instancias DOWN
+          example: 0
+        selfPreservationMode:
+          type: boolean
+          description: Indica si el modo de auto-preservación está activo
+          example: false
+
+    EurekaApplication:
+      type: object
+      description: Aplicación registrada en Eureka con sus instancias
+      properties:
+        name:
+          type: string
+          description: Nombre de la aplicación en MAYÚSCULAS
+          example: "ACCOUNTS-SERVICE"
+        instances:
+          type: array
+          description: Lista de instancias de la aplicación
+          items:
+            $ref: '#/components/schemas/EurekaInstanceResponse'
+
+    EurekaInstanceResponse:
+      type: object
+      description: Instancia registrada en Eureka con metadata completa
+      properties:
+        instanceId:
+          type: string
+          description: Identificador único de la instancia (formato: service:ip:port)
+          example: "accounts-service:172.20.0.5:8083"
+        hostName:
+          type: string
+          description: Nombre de host de la instancia
+          example: "accounts-service"
+        ipAddr:
+          type: string
+          description: Dirección IP de la instancia
+          example: "172.20.0.5"
+        port:
+          type: integer
+          description: Puerto HTTP de la instancia
+          example: 8083
+        status:
+          type: string
+          description: Estado de la instancia
+          enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+          example: "UP"
+        metadata:
+          type: object
+          description: Metadata adicional de la instancia
+          additionalProperties: true
+          nullable: true
+        leaseExpirationTimestamp:
+          type: integer
+          format: int64
+          description: Timestamp de expiración del lease en milisegundos
+          example: 1700000000000
+        lastHeartbeatTimestamp:
+          type: integer
+          format: int64
+          description: Timestamp del último heartbeat en milisegundos
+          example: 1700000000000
+
+    ApiError:
+      type: object
+      description: Cuerpo estándar de error de la API Yanki
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Momento exacto en que se generó el error (ISO 8601)
+          example: "2024-01-15T10:30:00Z"
+        status:
+          type: integer
+          format: int32
+          description: Código de estado HTTP
+          example: 401
+        error:
+          type: string
+          description: Descripción textual del error HTTP
+          example: "Unauthorized"
+        code:
+          type: string
+          description: Código de negocio específico del error
+          example: "NOT_AUTHENTICATED"
+        message:
+          type: string
+          description: Descripción legible del error en español
+          example: "Credenciales Basic Auth requeridas"
+        path:
+          type: string
+          description: Ruta de la API que originó el error
+          example: "/eureka/apps"
+        details:
+          type: object
+          description: Detalle adicional del error
+          additionalProperties: true
+          nullable: true
+
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: Autenticación Basic Auth para endpoints de Eureka Registry
+
+security:
+  - basicAuth: []
