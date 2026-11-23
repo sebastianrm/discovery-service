@@ -490,7 +490,7 @@ docker compose -f docker-compose.full.yml restart discovery-service
 
 | Archivo | Sección | Descripción |
 |---|---|---|
-| `../CASOS_USO/CU-18-Gestion-Discovery-Service.md` | Caso de uso completo | Gestión Discovery Service (Eureka Server) |
+| `../docs/CASOS_USO` | Caso de uso completo | Gestión Discovery Service (Eureka Server) |
 | `../DIAGRAMAS_SECUENCIAS/SEC021_registro_servicio.md` | Diagrama completo | Registro servicio en Eureka (InstanceInfo + metadata) |
 | `../DIAGRAMAS_SECUENCIAS/SEC022_heartbeat_salud.md` | Diagrama completo | Heartbeat 10s, health checks Actuator, evicción 30s |
 | `../DIAGRAMAS_SECUENCIAS/SEC023_descubrimiento_servicios.md` | Diagrama completo | Fetch registry 30s, routing lb://, zone affinity |
@@ -498,8 +498,8 @@ docker compose -f docker-compose.full.yml restart discovery-service
 | `../DIAGRAMAS_SECUENCIAS/SEC047_eureka_dashboard_security.md` | Diagrama completo | Dashboard Security: Spring Security Basic Auth |
 | `../DIAGRAMAS_SECUENCIAS/SEC048_health_indicators.md` | Diagrama completo | Health Indicators: MongoDB, Redis, Kafka, DiskSpace |
 | `../DIAGRAMAS_SECUENCIAS/SEC049_eureka_metadata_registro.md` | Diagrama completo | Metadata registro: version, zone, api.version, canary |
-| `../CASOS_PRUEBA/CASOS_PRUEBA_QA.md` | CP-166 a CP-174 | 9 casos de prueba (Happy Path + Error) |
-| `../CASOS_PRUEBA/RTM.md` | Fila CU-18 | Matriz trazabilidad completa CU-18 ↔ SEC ↔ CP |
+| `../docs/CASOS_PRUEBA` | CP-166 a CP-174 | 9 casos de prueba (Happy Path + Error) |
+| `../docs/CASOS_PRUEBA` | Fila CU-18 | Matriz trazabilidad completa CU-18 ↔ SEC ↔ CP |
 | `../README.md` | Sección 2, 3.1, 8, 9 | Mapa microservicios, Arquitectura, Docker Compose, Variables |
 | `Proyecto General vf.md` | Parte II, línea 76 | "Crear microservicio registro APIs con Eureka, habilitar panel control" |
 | `../CU-16-Infrestructura.md` | Sección 4.5 | Configuración Eureka Client estándar |
